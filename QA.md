@@ -39,3 +39,9 @@ GitHub Actions fullførte tester, bygg og deploy. Appen er åpnet på https://ol
 13 automatiske tester bestått. Nye tester dekker snapping og tonegrenser, fortegn og toneart til MIDI (C4 = 60), sekunder fra tempo/ticks, pauser, punktering, trioler, rytmepinner, bindebuer, opptakt, tomme akkordtakter, seksjonsavgrensing og oppretting/stopping av Web Audio-lydnoder med testkontekst.
 
 I nettleseren er en meloditone dratt fra G4 til F5 og gjenopprettet med én angrehandling. Pianoseksjon starter uten konsollfeil og avsluttes automatisk. Rytmeseksjon starter, markerer aktiv takt og stopper ved Stopp. Lydsignalets frekvens og scheduling er kontrollert automatisk; lyden er ikke vurdert med menneskelig lytting i denne testen. Produksjonsbygg bestått.
+
+## CSV og sist brukte dokument
+
+17 automatiske tester bestått. CSV-rundtur bevarer hele prosjektmodellen med tomme takter, trioler, fortegn, bindebuer, slash, opptakt, repetisjoner, anvisninger og sideoppsett. Tester dekker æøå, komma/semikolon, anførselstegn, linjeskift, formellignende tekst og tydelige feil for feil format/versjon, duplikater, manglende foreldre og ugyldige noter.
+
+I nettleseren er Noteark-CSV lastet ned fra eksportdialogen og importert via filvelgeren. Det importerte dokumentet ble navngitt «CSV-gjenåpning» og åpnet igjen automatisk etter oppfriskning, med noter og seksjoner bevart. Produksjonsbygg bestått.

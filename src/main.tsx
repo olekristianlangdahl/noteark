@@ -42,7 +42,9 @@ import { download, exportScore } from "./export";
 import "./style.css";
 import { transposePitch, pitchShortcut, dragPitch } from "./transpose";
 import { ScorePlayer, timeline, type PlaybackPosition } from "./playback";
+import { scoreToCsv, scoreFromCsv } from "./csv";
 const KEY = "noteark.projects.v1";
+const ACTIVE_KEY = "noteark.active-project.v1";
 const modes: Record<Mode, string> = {
   chords: "Akkordskjema",
   rhythm: "Trommer / rytme",
@@ -52,7 +54,10 @@ const keys = ["C", "G", "D", "A", "E", "B", "F#", "F", "Bb", "Eb", "Ab", "Db"];
 function load(): Score[] {
   try {
     const saved = localStorage.getItem(KEY);
-    if (saved) return JSON.parse(saved).map(validate);
+    if (saved) {
+      const loaded = JSON.parse(saved).map(validate) as Score[];
+      if (loaded.length) return loaded;
+    }
   } catch {
     sessionStorage.setItem(
       "noteark-recovery",
@@ -62,8 +67,18 @@ function load(): Score[] {
   return [example()];
 }
 function App() {
+  const [savedLocally, setSavedLocally] = useState(true);
   const [projects, setProjects] = useState<Score[]>(load);
-  const [score, setScore] = useState(projects[0]);
+  const [score, setScore] = useState(() => {
+    try {
+      return (
+        projects.find((p) => p.id === localStorage.getItem(ACTIVE_KEY)) ||
+        projects[0]
+      );
+    } catch {
+      return projects[0];
+    }
+  });
   const [past, setPast] = useState<Score[]>([]),
     [future, setFuture] = useState<Score[]>([]);
   const [selected, setSelected] = useState(score.sections[0].bars[0].id);
@@ -77,7 +92,7 @@ function App() {
     );
   const [preview, setPreview] = useState(false),
     [showExport, setShowExport] = useState(false),
-    [format, setFormat] = useState<"pdf" | "png" | "jpg">("pdf"),
+    [format, setFormat] = useState<"pdf" | "png" | "jpg" | "csv">("pdf"),
     [exportPage, setExportPage] = useState<number | "all">("all"),
     [transparent, setTransparent] = useState(false),
     [busy, setBusy] = useState(false);
@@ -246,8 +261,13 @@ function App() {
     try {
       const next = projects.map((p) => (p.id === score.id ? score : p));
       localStorage.setItem(KEY, JSON.stringify(next));
+      localStorage.setItem(ACTIVE_KEY, score.id);
+      setSavedLocally(true);
     } catch {
-      setMessage("Lokal lagring feilet. Last ned JSON som sikkerhetskopi.");
+      setSavedLocally(false);
+      setMessage(
+        "Lokal lagring feilet. Last ned CSV eller JSON som sikkerhetskopi.",
+      );
     }
   }, [score, projects]);
   useEffect(() => {
@@ -394,7 +414,11 @@ function App() {
           </span>
         </a>
         <div className="header-center">Ditt neste samspill starter her</div>
-        <span className="saved">● Lagret i nettleseren</span>
+        <span className="saved">
+          {savedLocally
+            ? "● Lagret i nettleseren"
+            : "Ikke lagret · last ned CSV/JSON"}
+        </span>
         <button className="primary" onClick={() => setShowExport(true)}>
           <Download size={17} /> Eksporter
         </button>
@@ -427,12 +451,15 @@ function App() {
             hidden
             ref={inputRef}
             type="file"
-            accept=".json"
+            accept=".json,.csv,text/csv,application/json"
             onChange={async (e) => {
               try {
                 const file = e.target.files?.[0];
                 if (!file) return;
-                const n = validate(JSON.parse(await file.text()));
+                const text = await file.text();
+                const n = file.name.toLowerCase().endsWith(".csv")
+                  ? scoreFromCsv(text)
+                  : validate(JSON.parse(text));
                 n.id = uid();
                 setProjects((p) => [
                   ...p.map((x) => (x.id === score.id ? score : x)),
@@ -490,8 +517,8 @@ function App() {
           <div className="local-note">
             <strong>Musikken din, hos deg.</strong>
             <p>
-              Dokumentene lagres bare i denne nettleseren. Ta en JSON-kopi for
-              sikkerhetskopi eller en annen enhet.
+              Dokumentene lagres automatisk i denne nettleseren. Ta en CSV-
+              eller JSON-kopi for sikkerhetskopi eller en annen enhet.
             </p>
             <button
               onClick={() =>
@@ -504,6 +531,18 @@ function App() {
               }
             >
               Last ned prosjekt (JSON)
+            </button>
+            <button
+              onClick={() =>
+                download(
+                  new Blob([scoreToCsv(score)], {
+                    type: "text/csv;charset=utf-8",
+                  }),
+                  score.title + ".csv",
+                )
+              }
+            >
+              Last ned prosjekt (CSV)
             </button>
             <button
               className="subtle"
@@ -1419,9 +1458,10 @@ function App() {
                 <option value="pdf">PDF · vektorgrafikk</option>
                 <option value="png">PNG · høy oppløsning</option>
                 <option value="jpg">JPG · hvit bakgrunn</option>
+                <option value="csv">Noteark-CSV · redigerbart prosjekt</option>
               </select>
             </label>
-            {format !== "pdf" && (
+            {(format === "png" || format === "jpg") && (
               <>
                 <label>
                   Sider
@@ -1454,8 +1494,9 @@ function App() {
               </>
             )}
             <p>
-              Sideoppsettet følger arket i forhåndsvisningen. Ingen
-              redigeringskontroller blir med.
+              {format === "csv"
+                ? "CSV-filen bevarer hele prosjektet: noter, seksjoner, akkorder og sideoppsett. Bruk Importer for å åpne og redigere den igjen. Andre CSV-formater støttes ikke."
+                : "Sideoppsettet følger arket i forhåndsvisningen. Ingen redigeringskontroller blir med."}
             </p>
             <div className="buttonrow">
               <button disabled={busy} onClick={() => setShowExport(false)}>
@@ -1467,7 +1508,15 @@ function App() {
                 onClick={async () => {
                   setBusy(true);
                   try {
-                    await exportScore(score, format, exportPage, transparent);
+                    if (format === "csv")
+                      download(
+                        new Blob([scoreToCsv(score)], {
+                          type: "text/csv;charset=utf-8",
+                        }),
+                        score.title + ".csv",
+                      );
+                    else
+                      await exportScore(score, format, exportPage, transparent);
                     setMessage("Eksporten er lastet ned.");
                   } catch (e) {
                     setMessage("Eksport feilet: " + (e as Error).message);

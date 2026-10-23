@@ -64,3 +64,11 @@ Trykk **Spill av** for valgt seksjon, eller velg **Hele arket**. Melodier spille
 Tempo, pauser, punkteringer, trioler, opptakt og bindebuer mellom like meloditoner i samme takt tas med. Ufullstendige takter får stillhet i resten av takten; overfylte takter spilles ferdig før neste takt. Avspilling følger arket rett gjennom én gang. Repetisjoner, hus og D.C./D.S. tolkes ikke. Akkordsymboler alene er stille. Pianolyden er en enkel harmonisk synthesizer, ikke et samplet akustisk piano.
 
 Velg pekeren og dra i notehodet for å flytte en meloditone vertikalt. Notens rytmiske plassering beholdes. Dette fungerer også med berøring; pauser og rytmenoter flyttes ikke til tonehøyder.
+
+## Noteark-CSV og gjenåpning
+
+Velg **Eksporter → Noteark-CSV** eller **Last ned prosjekt (CSV)** i biblioteket. Bruk **Importer** og velg CSV-filen for å få et fullt redigerbart prosjekt tilbake. JSON støttes fortsatt. Import legger til et eget dokument og erstatter ikke eksisterende dokumenter. Hele arket følger med, inkludert tomme takter, noter, trioler, fortegn, akkorder, anvisninger og sideoppsett.
+
+CSV-formatet er versjonert (`noteark`, versjon `1`), UTF-8 med BOM, overskriftsrad og én rad per dokument, seksjon, takt, note, akkord eller anvisning. Seksjons-/taktindekser og rekkefølge starter på 0. Komma er standard skilletegn; import støtter også semikolon. Sitering bevarer linjeskift og anførselstegn. Formellignende celleverdier sikres med et reversibelt apostrofprefiks. CSV fra andre programmer støttes ikke automatisk.
+
+Lokal lagring husker nå også sist brukte dokument ved oppfriskning. Hvis nettleseren avviser lagring, viser appen at dokumentet ikke er lagret og ber om CSV/JSON-kopi. En eksportert fil ligger på disken uavhengig av nettleserens lagring.
