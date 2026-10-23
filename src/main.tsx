@@ -37,6 +37,7 @@ import {
 import { renderScore, renderPalette, type Page, type Hit } from "./engrave";
 import { download, exportScore } from "./export";
 import "./style.css";
+import { transposePitch, pitchShortcut } from "./transpose";
 const KEY = "noteark.projects.v1";
 const modes: Record<Mode, string> = {
   chords: "Akkordskjema",
@@ -135,6 +136,27 @@ function App() {
   }, [score]);
   useEffect(() => {
     function key(e: KeyboardEvent) {
+      const target = e.target;
+      if (
+        target instanceof Element &&
+        target.closest(
+          'input, textarea, select, [contenteditable]:not([contenteditable="false"])',
+        )
+      )
+        return;
+      const delta = pitchShortcut(e);
+      if (
+        delta !== null &&
+        note &&
+        !note.rest &&
+        sec.mode === "melody" &&
+        !preview &&
+        !showExport
+      ) {
+        e.preventDefault();
+        transpose(delta);
+        return;
+      }
       if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "z") {
         e.preventDefault();
         e.shiftKey ? redo() : undo();
@@ -221,13 +243,9 @@ function App() {
   }
   function transpose(delta: number) {
     if (!note) return;
-    const letters = ["C", "D", "E", "F", "G", "A", "B"];
-    const [p, o] = note.pitch.split("/");
-    const total = +o * 7 + letters.indexOf(p[0]) + delta;
-    if (total < 0 || total > 62) return;
-    changeNote(
-      (n) => (n.pitch = letters[total % 7] + "/" + Math.floor(total / 7)),
-    );
+    if (note.rest || sec.mode !== "melody") return;
+    const next = transposePitch(note.pitch, delta, sec.key || score.key);
+    if (next !== note.pitch) changeNote((n) => (n.pitch = next));
   }
   const status =
     sec.mode === "chords" && !b.notes.length
@@ -935,13 +953,29 @@ function App() {
           {note && (
             <details open>
               <summary>Valgt note {pitchLabel(note.pitch)}</summary>
+              {sec.mode === "melody" && !note.rest && (
+                <p>
+                  + / −: halvtone opp / ned. Shift + / Shift −: heltone opp /
+                  ned.
+                </p>
+              )}
               <>
                 {note.triplet && (
                   <p>Triolens rytme redigeres samlet med tekstinnlegging.</p>
                 )}
                 <div className="buttonrow">
-                  <button onClick={() => transpose(1)}>Tone opp</button>
-                  <button onClick={() => transpose(-1)}>Tone ned</button>
+                  <button
+                    disabled={note.rest || sec.mode !== "melody"}
+                    onClick={() => transpose(1)}
+                  >
+                    Halvtone opp
+                  </button>
+                  <button
+                    disabled={note.rest || sec.mode !== "melody"}
+                    onClick={() => transpose(-1)}
+                  >
+                    Halvtone ned
+                  </button>
                 </div>
                 <label>
                   Verdi

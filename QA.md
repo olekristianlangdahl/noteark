@@ -28,3 +28,7 @@ Se README.md. Ingen avspilling, polyfoni eller MusicXML/MIDI. Bindebuer innenfor
 ## Publisert miljø
 
 GitHub Actions fullførte tester, bygg og deploy. Appen er åpnet på https://olekristianlangdahl.github.io/noteark/ og viser eksempelarket med to sider og innlastede musikkfonter under repository-base-pathen. Vanlig oppfriskning kontrolleres i samme URL.
+
+## Hurtigtaster for tonehøyde
+
++ og - flytter valgt meloditone én halvtone, Shift med tastene flytter to halvtoner. Norsk Shift+ (? på plusstasten), Shift- (_), numerisk tastatur, toneart, eksplisitte fortegn og oktavgrenser dekkes av to nye tester. Totalt åtte tester bestått. Nettlesertest: G4 → G#4 → A#4 → A4 → G4 ved +, Shift+, -, Shift-. Skrivefelt, forhåndsvisning og eksportdialog er unntatt hurtigtastene.

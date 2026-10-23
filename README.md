@@ -53,3 +53,5 @@ Fontdata er hentet fra VexFlow-distribusjonen. VexFlow er MIT-lisensiert; Bravur
 - https://github.com/vexflow/vexflow/wiki/Tutorial
 - https://react.dev/reference/react-dom/client/createRoot
 - https://vite.dev/guide/static-deploy.html
+
+Velg en meloditone og bruk `+` / `-` for én halvtone opp/ned, eller `Shift` sammen med tastene for en heltone. Hurtigtastene tar hensyn til toneart og fortegn, fungerer også for trioltoner og kan angres. De er inaktive når du skriver i felt eller viser forhåndsvisning/eksport.
