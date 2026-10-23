@@ -1,9 +1,94 @@
-import {jsPDF} from 'jspdf';
-import 'svg2pdf.js';
-import JSZip from 'jszip';
-import {outline} from './outline';
-import {renderScore} from './engrave';
-import type {Score} from './model';
-export function download(blob:Blob,name:string){const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000);}
-export async function image(svg:SVGSVGElement,type:'png'|'jpg',transparent=false):Promise<Blob>{const canvas=document.createElement('canvas');const vb=svg.viewBox.baseVal;canvas.width=Math.round(vb.width*3);canvas.height=Math.round(vb.height*3);const ctx=canvas.getContext('2d')!;if(!transparent||type==='jpg'){ctx.fillStyle='white';ctx.fillRect(0,0,canvas.width,canvas.height);}const img=new Image();const url=URL.createObjectURL(new Blob([new XMLSerializer().serializeToString(svg)],{type:'image/svg+xml'}));try{await new Promise<void>((resolve,reject)=>{img.onload=()=>resolve();img.onerror=reject;img.src=url;});ctx.drawImage(img,0,0,canvas.width,canvas.height);return await new Promise((res,rej)=>canvas.toBlob(b=>b?res(b):rej(Error('Bildeeksport feilet')),type==='jpg'?'image/jpeg':'image/png',.96));}finally{URL.revokeObjectURL(url);}}
-export async function exportScore(s:Score,type:'pdf'|'png'|'jpg',pageIndex:number|'all',transparent:boolean){await document.fonts.ready;const pages=renderScore(s).map(p=>({...p,svg:outline(p.svg)}));const name=s.title.replace(/[^\p{L}\p{N} _-]/gu,'')||'Noteark';if(type==='pdf'){const pdf=new jsPDF({orientation:s.layout.landscape?'landscape':'portrait',unit:'mm',format:'a4'});for(let i=0;i<pages.length;i++){if(i)pdf.addPage();await pdf.svg(pages[i].svg,{x:0,y:0,width:pdf.internal.pageSize.getWidth(),height:pdf.internal.pageSize.getHeight()});}pdf.save(name+'.pdf');return;}if(pageIndex!=='all'){if(!pages[pageIndex])throw Error('Siden finnes ikke');download(await image(pages[pageIndex].svg,type,transparent),`${name}-${pageIndex+1}.${type}`);return;}const zip=new JSZip();for(let i=0;i<pages.length;i++)zip.file(`${name}-${i+1}.${type}`,await image(pages[i].svg,type,transparent));download(await zip.generateAsync({type:'blob'}),name+'.zip');}
+import { jsPDF } from "jspdf";
+import "svg2pdf.js";
+import JSZip from "jszip";
+import { outline } from "./outline";
+import { renderScore } from "./engrave";
+import type { Score } from "./model";
+export function download(blob: Blob, name: string) {
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = name;
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+}
+export async function image(
+  svg: SVGSVGElement,
+  type: "png" | "jpg",
+  transparent = false,
+): Promise<Blob> {
+  const canvas = document.createElement("canvas");
+  const vb = svg.viewBox.baseVal;
+  canvas.width = Math.round(vb.width * 3);
+  canvas.height = Math.round(vb.height * 3);
+  const ctx = canvas.getContext("2d")!;
+  if (!transparent || type === "jpg") {
+    ctx.fillStyle = "white";
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+  }
+  const img = new Image();
+  const url = URL.createObjectURL(
+    new Blob([new XMLSerializer().serializeToString(svg)], {
+      type: "image/svg+xml",
+    }),
+  );
+  try {
+    await new Promise<void>((resolve, reject) => {
+      img.onload = () => resolve();
+      img.onerror = reject;
+      img.src = url;
+    });
+    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+    return await new Promise((res, rej) =>
+      canvas.toBlob(
+        (b) => (b ? res(b) : rej(Error("Bildeeksport feilet"))),
+        type === "jpg" ? "image/jpeg" : "image/png",
+        0.96,
+      ),
+    );
+  } finally {
+    URL.revokeObjectURL(url);
+  }
+}
+export async function exportScore(
+  s: Score,
+  type: "pdf" | "png" | "jpg",
+  pageIndex: number | "all",
+  transparent: boolean,
+) {
+  await document.fonts.ready;
+  const pages = renderScore(s).map((p) => ({ ...p, svg: outline(p.svg) }));
+  const name = s.title.replace(/[^\p{L}\p{N} _-]/gu, "") || "Noteark";
+  if (type === "pdf") {
+    const pdf = new jsPDF({
+      orientation: s.layout.landscape ? "landscape" : "portrait",
+      unit: "mm",
+      format: "a4",
+    });
+    for (let i = 0; i < pages.length; i++) {
+      if (i) pdf.addPage();
+      await pdf.svg(pages[i].svg, {
+        x: 0,
+        y: 0,
+        width: pdf.internal.pageSize.getWidth(),
+        height: pdf.internal.pageSize.getHeight(),
+      });
+    }
+    pdf.save(name + ".pdf");
+    return;
+  }
+  if (pageIndex !== "all") {
+    if (!pages[pageIndex]) throw Error("Siden finnes ikke");
+    download(
+      await image(pages[pageIndex].svg, type, transparent),
+      `${name}-${pageIndex + 1}.${type}`,
+    );
+    return;
+  }
+  const zip = new JSZip();
+  for (let i = 0; i < pages.length; i++)
+    zip.file(
+      `${name}-${i + 1}.${type}`,
+      await image(pages[i].svg, type, transparent),
+    );
+  download(await zip.generateAsync({ type: "blob" }), name + ".zip");
+}

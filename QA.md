@@ -24,3 +24,7 @@ Kontrollert i nettleseren via appens faktiske kontroller:
 ## Kjente grenser
 
 Se README.md. Ingen avspilling, polyfoni eller MusicXML/MIDI. Bindebuer innenfor samme takt. Ekstreme mengder tekst eller overfylte takter krever oppdeling og kontroll av forhåndsvisning.
+
+## Publisert miljø
+
+GitHub Actions fullførte tester, bygg og deploy. Appen er åpnet på https://olekristianlangdahl.github.io/noteark/ og viser eksempelarket med to sider og innlastede musikkfonter under repository-base-pathen. Vanlig oppfriskning kontrolleres i samme URL.
