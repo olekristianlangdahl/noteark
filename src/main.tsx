@@ -14,6 +14,9 @@ import {
   FileUp,
   Eye,
   MousePointer2,
+  Play,
+  Square,
+  Volume2,
 } from "lucide-react";
 import {
   type Score,
@@ -37,7 +40,8 @@ import {
 import { renderScore, renderPalette, type Page, type Hit } from "./engrave";
 import { download, exportScore } from "./export";
 import "./style.css";
-import { transposePitch, pitchShortcut } from "./transpose";
+import { transposePitch, pitchShortcut, dragPitch } from "./transpose";
+import { ScorePlayer, timeline, type PlaybackPosition } from "./playback";
 const KEY = "noteark.projects.v1";
 const modes: Record<Mode, string> = {
   chords: "Akkordskjema",
@@ -83,6 +87,125 @@ function App() {
     [instruction, setInstruction] = useState("Bygg opp"),
     [position, setPosition] = useState<"above" | "below" | "side">("below");
   const inputRef = useRef<HTMLInputElement>(null);
+  const player = useRef<ScorePlayer | null>(null);
+  if (!player.current) player.current = new ScorePlayer();
+  const [playing, setPlaying] = useState(false);
+  const [playingAt, setPlayingAt] = useState<PlaybackPosition>(null);
+  const [playScope, setPlayScope] = useState("section");
+  const [volume, setVolume] = useState(0.55);
+  const gesture = useRef<{
+    sectionId: string;
+    barId: string;
+    noteId: string;
+    pitch: string;
+    startY: number;
+    scale: number;
+    steps: number;
+  } | null>(null);
+  const [dragged, setDragged] = useState<{
+    barId: string;
+    noteId: string;
+    pitch: string;
+  } | null>(null);
+  useEffect(() => {
+    player.current!.stop();
+    setPlaying(false);
+    setPlayingAt(null);
+  }, [score]);
+  useEffect(() => () => player.current?.stop(), []);
+  async function play() {
+    if (playing) {
+      player.current!.stop();
+      setPlaying(false);
+      setPlayingAt(null);
+      return;
+    }
+    if (
+      !timeline(score, playScope === "section" ? sec.id : undefined).events
+        .length
+    ) {
+      setMessage(
+        "Ingen noter å spille. Akkordtakter uten rytmenoter er stille; velg en seksjon med melodi eller rytme.",
+      );
+      return;
+    }
+    setPlaying(true);
+    try {
+      await player.current!.play(
+        score,
+        playScope === "section" ? sec.id : undefined,
+        setPlayingAt,
+        () => setPlaying(false),
+      );
+    } catch (error) {
+      setPlaying(false);
+      setPlayingAt(null);
+      setMessage("Kunne ikke starte lyden: " + (error as Error).message);
+    }
+  }
+  function beginNoteDrag(
+    e: React.PointerEvent<SVGCircleElement>,
+    hit: Hit,
+    id: string,
+  ) {
+    if (e.button !== 0) return;
+    e.preventDefault();
+    e.stopPropagation();
+    setSelected(hit.barId);
+    setNoteId(id);
+    const section = score.sections.find((s) => s.id === hit.sectionId)!;
+    const n = section.bars
+      .find((b) => b.id === hit.barId)!
+      .notes.find((n) => n.id === id)!;
+    if (section.mode !== "melody" || n.rest) return;
+    const svg = e.currentTarget.ownerSVGElement!;
+    gesture.current = {
+      sectionId: section.id,
+      barId: hit.barId,
+      noteId: id,
+      pitch: n.pitch,
+      startY: e.clientY,
+      scale: svg.viewBox.baseVal.height / svg.getBoundingClientRect().height,
+      steps: 0,
+    };
+    e.currentTarget.setPointerCapture(e.pointerId);
+  }
+  function moveNoteDrag(e: React.PointerEvent<SVGCircleElement>) {
+    const g = gesture.current;
+    if (!g) return;
+    const steps =
+      Math.abs(e.clientY - g.startY) < 3
+        ? 0
+        : Math.round(((g.startY - e.clientY) * g.scale) / 5);
+    if (steps !== g.steps) {
+      g.steps = steps;
+      setDragged({
+        barId: g.barId,
+        noteId: g.noteId,
+        pitch: dragPitch(g.pitch, steps),
+      });
+    }
+  }
+  function endNoteDrag(
+    e: React.PointerEvent<SVGCircleElement>,
+    cancel = false,
+  ) {
+    const g = gesture.current;
+    gesture.current = null;
+    setDragged(null);
+    if (e.currentTarget.hasPointerCapture(e.pointerId))
+      e.currentTarget.releasePointerCapture(e.pointerId);
+    if (g && !cancel && g.steps !== 0) {
+      const next = dragPitch(g.pitch, g.steps);
+      if (next !== g.pitch)
+        commit((s) => {
+          s.sections
+            .find((s) => s.id === g.sectionId)!
+            .bars.find((b) => b.id === g.barId)!
+            .notes.find((n) => n.id === g.noteId)!.pitch = next;
+        });
+    }
+  }
   const sec =
     score.sections.find((s) => s.bars.some((b) => b.id === selected)) ||
     score.sections[0];
@@ -129,11 +252,19 @@ function App() {
   }, [score, projects]);
   useEffect(() => {
     try {
-      setPages(renderScore(score));
+      const visible = dragged ? structuredClone(score) : score;
+      if (dragged) {
+        const n = visible.sections
+          .flatMap((s) => s.bars)
+          .find((b) => b.id === dragged.barId)
+          ?.notes.find((n) => n.id === dragged.noteId);
+        if (n) n.pitch = dragged.pitch;
+      }
+      setPages(renderScore(visible));
     } catch (e) {
       setMessage("Notegrafikk: " + (e as Error).message);
     }
-  }, [score]);
+  }, [score, dragged]);
   useEffect(() => {
     function key(e: KeyboardEvent) {
       const target = e.target;
@@ -418,6 +549,49 @@ function App() {
               </button>
             </div>
           </div>
+          <div
+            className="playback-bar"
+            aria-label="Avspilling"
+            title="Spilles rett gjennom. Akkordsymboler og repetisjonstegn tolkes ikke."
+          >
+            <button
+              className={playing ? "chosen" : "primary"}
+              onClick={play}
+              aria-label={playing ? "Stopp avspilling" : "Spill av"}
+            >
+              {playing ? <Square size={17} /> : <Play size={17} />}{" "}
+              {playing ? "Stopp" : "Spill av"}
+            </button>
+            <select
+              aria-label="Spill av område"
+              value={playScope}
+              onChange={(e) => setPlayScope(e.target.value)}
+              disabled={playing}
+            >
+              <option value="section">Valgt seksjon</option>
+              <option value="document">Hele arket</option>
+            </select>
+            <label className="volume">
+              <Volume2 size={17} />
+              <input
+                aria-label="Lydstyrke"
+                type="range"
+                min="0"
+                max="1"
+                step="0.05"
+                value={volume}
+                onChange={(e) => {
+                  setVolume(+e.target.value);
+                  player.current!.setVolume(+e.target.value);
+                }}
+              />
+            </label>
+            <small>
+              {playing
+                ? "Spiller · " + score.tempo + " BPM"
+                : "Melodi: piano · rytme: rytmepinne"}
+            </small>
+          </div>
           {!preview && (
             <>
               <div className="palette">
@@ -554,7 +728,11 @@ function App() {
                           height={h.height}
                           rx={3}
                           fill={
-                            selected === h.barId ? "#2f7b6810" : "transparent"
+                            playingAt?.barId === h.barId
+                              ? "#dfab4b25"
+                              : selected === h.barId
+                                ? "#2f7b6810"
+                                : "transparent"
                           }
                           stroke={
                             selected === h.barId ? "#579b86" : "transparent"
@@ -580,12 +758,23 @@ function App() {
                               cy={n.y}
                               r={12}
                               fill={
-                                noteId === n.id ? "#31866c50" : "transparent"
+                                playingAt?.noteId === n.id
+                                  ? "#dfab4b99"
+                                  : noteId === n.id
+                                    ? "#31866c50"
+                                    : "transparent"
                               }
-                              onClick={() => {
-                                setSelected(h.barId);
-                                setNoteId(n.id);
+                              className="note-hit"
+                              aria-label="Velg eller dra note"
+                              onPointerDown={(e) => beginNoteDrag(e, h, n.id)}
+                              onPointerMove={moveNoteDrag}
+                              onPointerUp={(e) => endNoteDrag(e)}
+                              onPointerCancel={(e) => endNoteDrag(e, true)}
+                              onLostPointerCapture={() => {
+                                gesture.current = null;
+                                setDragged(null);
                               }}
+                              onClick={(e) => e.stopPropagation()}
                             />
                           ))}
                       </g>
@@ -955,8 +1144,8 @@ function App() {
               <summary>Valgt note {pitchLabel(note.pitch)}</summary>
               {sec.mode === "melody" && !note.rest && (
                 <p>
-                  + / −: halvtone opp / ned. Shift + / Shift −: heltone opp /
-                  ned.
+                  Dra noten opp eller ned til en linje eller et mellomrom. + /
+                  −: halvtone opp / ned. Shift + / Shift −: heltone opp / ned.
                 </p>
               )}
               <>

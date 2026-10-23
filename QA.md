@@ -23,7 +23,7 @@ Kontrollert i nettleseren via appens faktiske kontroller:
 
 ## Kjente grenser
 
-Se README.md. Ingen avspilling, polyfoni eller MusicXML/MIDI. Bindebuer innenfor samme takt. Ekstreme mengder tekst eller overfylte takter krever oppdeling og kontroll av forhåndsvisning.
+Se README.md. Ingen polyfoni eller MusicXML/MIDI. Bindebuer innenfor samme takt. Ekstreme mengder tekst eller overfylte takter krever oppdeling og kontroll av forhåndsvisning.
 
 ## Publisert miljø
 
@@ -32,3 +32,10 @@ GitHub Actions fullførte tester, bygg og deploy. Appen er åpnet på https://ol
 ## Hurtigtaster for tonehøyde
 
 + og - flytter valgt meloditone én halvtone, Shift med tastene flytter to halvtoner. Norsk Shift+ (? på plusstasten), Shift- (_), numerisk tastatur, toneart, eksplisitte fortegn og oktavgrenser dekkes av to nye tester. Totalt åtte tester bestått. Nettlesertest: G4 → G#4 → A#4 → A4 → G4 ved +, Shift+, -, Shift-. Skrivefelt, forhåndsvisning og eksportdialog er unntatt hurtigtastene.
+
+
+## Vertikal dragging og lyd
+
+13 automatiske tester bestått. Nye tester dekker snapping og tonegrenser, fortegn og toneart til MIDI (C4 = 60), sekunder fra tempo/ticks, pauser, punktering, trioler, rytmepinner, bindebuer, opptakt, tomme akkordtakter, seksjonsavgrensing og oppretting/stopping av Web Audio-lydnoder med testkontekst.
+
+I nettleseren er en meloditone dratt fra G4 til F5 og gjenopprettet med én angrehandling. Pianoseksjon starter uten konsollfeil og avsluttes automatisk. Rytmeseksjon starter, markerer aktiv takt og stopper ved Stopp. Lydsignalets frekvens og scheduling er kontrollert automatisk; lyden er ikke vurdert med menneskelig lytting i denne testen. Produksjonsbygg bestått.

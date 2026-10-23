@@ -21,12 +21,7 @@ const signatures: Record<string, string> = {
   Ab: "Bb Eb Ab Db",
   Db: "Bb Eb Ab Db Gb",
 };
-/** Return an explicit pitch, so naturals cancel the key signature and earlier accidentals. */
-export function transposePitch(
-  pitch: string,
-  delta: number,
-  key: string,
-): string {
+export function pitchNumber(pitch: string, key: string): number {
   const [name, octave] = pitch.split("/");
   const accidental =
     name.slice(1) ||
@@ -35,10 +30,20 @@ export function transposePitch(
       .find((n) => n[0] === name[0])
       ?.slice(1) ||
     "";
-  const current =
+  return (
     Number(octave) * 12 +
     semitones[name[0]] +
-    (accidental === "#" ? 1 : accidental === "b" ? -1 : 0);
+    (accidental === "#" ? 1 : accidental === "b" ? -1 : 0)
+  );
+}
+
+/** Return an explicit pitch, so naturals cancel the key signature and earlier accidentals. */
+export function transposePitch(
+  pitch: string,
+  delta: number,
+  key: string,
+): string {
+  const current = pitchNumber(pitch, key);
   const target = current + delta;
   if (target < 0 || target > 107) return pitch;
   const names =
@@ -80,4 +85,15 @@ export function pitchShortcut(
     (e.shiftKey && e.code === "Minus" && e.key === "?");
   const down = e.key === "-" || e.key === "_" || e.code === "NumpadSubtract";
   return up ? (e.shiftKey ? 2 : 1) : down ? (e.shiftKey ? -2 : -1) : null;
+}
+
+/** Snap vertical dragging to the next staff line/space, retaining an explicit accidental. */
+export function dragPitch(pitch: string, steps: number): string {
+  const [name, octave] = pitch.split("/");
+  const letters = ["C", "D", "E", "F", "G", "A", "B"];
+  const target = Math.max(
+    0,
+    Math.min(62, Number(octave) * 7 + letters.indexOf(name[0]) + steps),
+  );
+  return letters[target % 7] + name.slice(1) + "/" + Math.floor(target / 7);
 }

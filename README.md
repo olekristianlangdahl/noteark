@@ -44,7 +44,7 @@ GitHub Actions tester og bygger main, og publiserer dist. Aktiver Settings → P
 
 Automatiske modelltester dekker korrekte/overfylte rytmer, pauser, punkteringer, trioler, ugyldig syntaks uten mutasjon, norske toner/oktaver, utfylling og JSON-rundtur/importvalidering. Nettleserkontroller og eksportkontroller dokumenteres i QA.md.
 
-Første versjon har én stemme per takt og enkeltnoter, ingen polyfoni, lydavspilling, MIDI, MusicXML eller automatisk D.C./D.S.-tolkning. Bindebuer går til neste note i samme takt. Trioler kan velges, men gruppens rytme redigeres via tekst. Det er ikke implementert fri flytting av eksisterende noter med drahåndtak; tonehøyde endres med opp/ned i panelet. Anvisninger kan legges til per takt/slag; seksjonstekst er seksjonsnavnet. Lange tekstmengder og ekstremt tette/overfylte takter bør fordeles på flere takter og kontrolleres i forhåndsvisningen. Appen er laget først for datamaskin og nettbrett, ikke telefon.
+Første versjon har én stemme per takt og enkeltnoter, ingen polyfoni, MIDI, MusicXML eller automatisk D.C./D.S.-tolkning. Bindebuer går til neste note i samme takt. Trioler kan velges, men gruppens rytme redigeres via tekst. Eksisterende melodinoter kan dras vertikalt med pekeren; de snapper til linjer og mellomrom, og eksplisitte fortegn beholdes. Hele draget er én angrehandling. Anvisninger kan legges til per takt/slag; seksjonstekst er seksjonsnavnet. Lange tekstmengder og ekstremt tette/overfylte takter bør fordeles på flere takter og kontrolleres i forhåndsvisningen. Appen er laget først for datamaskin og nettbrett, ikke telefon.
 
 Fontdata er hentet fra VexFlow-distribusjonen. VexFlow er MIT-lisensiert; Bravura og Academico er under SIL Open Font License. Se licenses/.
 
@@ -55,3 +55,12 @@ Fontdata er hentet fra VexFlow-distribusjonen. VexFlow er MIT-lisensiert; Bravur
 - https://vite.dev/guide/static-deploy.html
 
 Velg en meloditone og bruk `+` / `-` for én halvtone opp/ned, eller `Shift` sammen med tastene for en heltone. Hurtigtastene tar hensyn til toneart og fortegn, fungerer også for trioltoner og kan angres. De er inaktive når du skriver i felt eller viser forhåndsvisning/eksport.
+
+
+## Avspilling
+
+Trykk **Spill av** for valgt seksjon, eller velg **Hele arket**. Melodier spilles med en syntetisk pianolignende klang; rytmenoter og slash spilles som korte rytmepinneslag. Lyden lages lokalt med Web Audio API, uten lydfiler, nettverkstjenester eller nye avhengigheter. Lydstyrke og stopp er tilgjengelig i avspillingslinjen; takt og note markeres under avspilling. Redigering stopper pågående avspilling.
+
+Tempo, pauser, punkteringer, trioler, opptakt og bindebuer mellom like meloditoner i samme takt tas med. Ufullstendige takter får stillhet i resten av takten; overfylte takter spilles ferdig før neste takt. Avspilling følger arket rett gjennom én gang. Repetisjoner, hus og D.C./D.S. tolkes ikke. Akkordsymboler alene er stille. Pianolyden er en enkel harmonisk synthesizer, ikke et samplet akustisk piano.
+
+Velg pekeren og dra i notehodet for å flytte en meloditone vertikalt. Notens rytmiske plassering beholdes. Dette fungerer også med berøring; pauser og rytmenoter flyttes ikke til tonehøyder.
