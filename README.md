@@ -72,3 +72,7 @@ Velg **Eksporter → Noteark-CSV** eller **Last ned prosjekt (CSV)** i bibliotek
 CSV-formatet er versjonert (`noteark`, versjon `1`), UTF-8 med BOM, overskriftsrad og én rad per dokument, seksjon, takt, note, akkord eller anvisning. Seksjons-/taktindekser og rekkefølge starter på 0. Komma er standard skilletegn; import støtter også semikolon. Sitering bevarer linjeskift og anførselstegn. Formellignende celleverdier sikres med et reversibelt apostrofprefiks. CSV fra andre programmer støttes ikke automatisk.
 
 Lokal lagring husker nå også sist brukte dokument ved oppfriskning. Hvis nettleseren avviser lagring, viser appen at dokumentet ikke er lagret og ber om CSV/JSON-kopi. En eksportert fil ligger på disken uavhengig av nettleserens lagring.
+
+Fortegn i notebildet beregnes fra toneart og tidligere noter i samme takt/oktav. Overflødige fortegn skjules; nødvendige oppløsninger og tilbakeføringer tegnes automatisk. Tonehøyden lagres uavhengig av hvilket tegn som er nødvendig å vise. En tone uten eksplisitt fortegn i tekstinnleggingen følger tonearten; dersom forrige note avvek, setter notebildet inn nødvendig tilbakeføring.
+
+Fortegnsregler kontrollert mot https://www.open.edu/openlearn/history-the-arts/music/an-introduction-music-theory/content-section-6.2 og https://odp.library.tamu.edu/stepstomusictheory/chapter/more-basics/.

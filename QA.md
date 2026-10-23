@@ -45,3 +45,9 @@ I nettleseren er en meloditone dratt fra G4 til F5 og gjenopprettet med én angr
 17 automatiske tester bestått. CSV-rundtur bevarer hele prosjektmodellen med tomme takter, trioler, fortegn, bindebuer, slash, opptakt, repetisjoner, anvisninger og sideoppsett. Tester dekker æøå, komma/semikolon, anførselstegn, linjeskift, formellignende tekst og tydelige feil for feil format/versjon, duplikater, manglende foreldre og ugyldige noter.
 
 I nettleseren er Noteark-CSV lastet ned fra eksportdialogen og importert via filvelgeren. Det importerte dokumentet ble navngitt «CSV-gjenåpning» og åpnet igjen automatisk etter oppfriskning, med noter og seksjoner bevart. Produksjonsbygg bestått.
+
+## Fortegn etter toneart og takt
+
+21 tester bestått. Ny fortegnsplan skjuler fortegn som allerede følger av tonearten og gjentatte fortegn ved samme tonehøyde i takten. Oppløsning og tilbakeføring vises når de endrer gjeldende fortegn. Tilstanden er per bokstav og oktav og starter fra tonearten i hver takt. Pauser og slash påvirker ikke tilstanden. Lagrede tonehøyder og avspilling endres ikke.
+
+Visuelt kontrollert i nettleseren: G-dur med F#4, Fn4, Fn4, F#4 viser ingen ekstra kryss på første note, ett oppløsningstegn på andre, intet fortegn på tredje og nytt kryss på fjerde. Samme renderer brukes ved eksport.

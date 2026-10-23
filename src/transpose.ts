@@ -21,15 +21,18 @@ const signatures: Record<string, string> = {
   Ab: "Bb Eb Ab Db",
   Db: "Bb Eb Ab Db Gb",
 };
-export function pitchNumber(pitch: string, key: string): number {
-  const [name, octave] = pitch.split("/");
-  const accidental =
-    name.slice(1) ||
+export function pitchAccidental(pitch: string, key: string): "#" | "b" | "n" {
+  const name = pitch.split("/")[0];
+  return (name.slice(1) ||
     signatures[key]
       ?.split(" ")
       .find((n) => n[0] === name[0])
       ?.slice(1) ||
-    "";
+    "n") as "#" | "b" | "n";
+}
+export function pitchNumber(pitch: string, key: string): number {
+  const [name, octave] = pitch.split("/");
+  const accidental = pitchAccidental(pitch, key);
   return (
     Number(octave) * 12 +
     semitones[name[0]] +

@@ -27,6 +27,7 @@ export type Hit = {
   notes: { id: string; x: number; y: number }[];
 };
 export type Page = { svg: SVGSVGElement; hits: Hit[] };
+import { barAccidentals } from "./accidentals";
 const NS = "http://www.w3.org/2000/svg";
 function text(
   svg: SVGSVGElement,
@@ -165,7 +166,8 @@ export function renderScore(score: Score): Page[] {
           notes: [],
         };
         page!.hits.push(hit);
-        const notes = b.notes.map((n) => {
+        const accidentalSigns = barAccidentals(b.notes, sec.key || score.key);
+        const notes = b.notes.map((n, index) => {
           const key =
             sec.mode === "melody" && !n.rest ? n.pitch.toLowerCase() : "b/4";
           const note = new StaveNote({
@@ -178,9 +180,9 @@ export function renderScore(score: Score): Page[] {
             autoStem: true,
           });
           if (n.dot) Dot.buildAndAttach([note], { all: true });
-          const acc = /^[A-G]([#bn])\//.exec(n.pitch);
-          if (acc && sec.mode === "melody" && !n.rest)
-            note.addModifier(new Accidental(acc[1]), 0);
+          const acc = accidentalSigns[index];
+          if (acc && sec.mode === "melody")
+            note.addModifier(new Accidental(acc), 0);
           return note;
         });
         if (notes.length) {
